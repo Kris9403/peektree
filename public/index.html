@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PeekTree</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <div class="header gradient-glow">
+      <h1 class="funky-header">⚡PeekTree🌠</h1>
+      <div class="controls">
+        <button id="clearAllBtn">Clear All</button>
+        <button id="copySelectedBtn">Copy Selected</button>
+        <button id="darkModeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+          <div class="icon sun"></div>
+        </button>        
+        <div class="directory-input-container">
+          <input type="text" id="directoryPathInput" placeholder="Enter directory path..." />
+          <button id="scanDirectoryBtn">Scan</button>
+        </div>          
+      </div>
+    </div>
+    <div class="main">
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-controls">
+          <input type="text" placeholder="Search files..." id="searchInput">
+          <button id="expandAllBtn">Expand All</button>
+        </div>
+      </div>
+      <div class="resizer" id="resizer"></div>
+      <div class="content" id="content"></div>
+    </div>
+  </div>
+  <div id="toast-container"></div>
+  <div id="loading-spinner" class="spinner hidden"></div>
+</body>
+</html>
