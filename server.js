@@ -5,7 +5,7 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 // Optional default root (used only in fallback GET)
-const DEFAULT_ROOT = path.join('C:', 'Users', 'GIRIJA', 'Desktop', 'research-collaborative-editor');
+const DEFAULT_ROOT = path.join('C:', 'Users');
 
 const defaultIgnoreList = [
     '.next','public', 'next-env.d.ts','favicon.ico', 'node_modules', '.git', 'README.md', 'example.txt', 'package-lock.json',
