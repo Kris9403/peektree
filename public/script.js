@@ -9,13 +9,21 @@ let customColors = {
   sidebarBg: '#333333',
   accentColor: '#00b3b3'
 };
+let selectedExtensions = []; // Track selected extensions
 
-// Load custom colors from localStorage if available
+// Load custom colors and selected extensions from localStorage
 function loadCustomColors() {
   const savedColors = localStorage.getItem('customColors');
   if (savedColors) {
     customColors = JSON.parse(savedColors);
     applyCustomColors();
+  }
+}
+
+function loadSelectedExtensions() {
+  const savedExtensions = localStorage.getItem('selectedExtensions');
+  if (savedExtensions) {
+    selectedExtensions = JSON.parse(savedExtensions);
   }
 }
 
@@ -163,7 +171,7 @@ async function getFileContent(filePath, fileName) {
 
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, m =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[m])
   );
 }
 
@@ -787,6 +795,104 @@ function searchTree() {
   }
 }
 
+// New function to get unique extensions from file tree
+function getUniqueExtensions(data) {
+  const extensions = new Set();
+  function traverse(items) {
+    items.forEach(item => {
+      if (item.type === 'file' && item.extension) {
+        extensions.add(item.extension);
+      }
+      if (item.children) {
+        traverse(item.children);
+      }
+    });
+  }
+  traverse(data);
+  return Array.from(extensions).sort();
+}
+
+// New function to render extension dropdown
+function renderExtensionDropdown(extensions) {
+  const dropdown = document.querySelector('#extensionDropdown .extension-list');
+  dropdown.innerHTML = '';
+
+  extensions.forEach(ext => {
+    const div = document.createElement('div');
+    div.className = 'extension-item';
+    div.innerHTML = `
+      <input type="checkbox" id="ext-${ext}" value="${ext}" ${selectedExtensions.includes(ext) ? 'checked' : ''}>
+      <label for="ext-${ext}">${ext}</label>
+    `;
+    dropdown.appendChild(div);
+  });
+
+  // Add event listeners to checkboxes
+  dropdown.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const ext = e.target.value;
+      if (e.target.checked) {
+        if (!selectedExtensions.includes(ext)) {
+          selectedExtensions.push(ext);
+        }
+      } else {
+        const index = selectedExtensions.indexOf(ext);
+        if (index > -1) {
+          selectedExtensions.splice(index, 1);
+        }
+      }
+      localStorage.setItem('selectedExtensions', JSON.stringify(selectedExtensions));
+      selectFilesByExtensions();
+      showToast(`Extension ${ext} ${e.target.checked ? 'selected' : 'deselected'}`, 'info');
+    });
+  });
+}
+
+// New function to select files by selected extensions
+function selectFilesByExtensions() {
+  const fileItems = document.querySelectorAll('#sidebar li.file');
+  fileItems.forEach(item => {
+    const checkbox = item.querySelector('.tree-checkbox');
+    const filePath = item.dataset.path;
+    const fileName = filePath.split(/[\\/]/).pop();
+    const ext = fileName.split('.').pop().toLowerCase();
+    
+    if (selectedExtensions.includes(ext)) {
+      if (!checkbox.checked) {
+        checkbox.checked = true;
+        const changeEvent = new Event('change');
+        checkbox.dispatchEvent(changeEvent);
+      }
+    } else {
+      if (checkbox.checked) {
+        checkbox.checked = false;
+        const changeEvent = new Event('change');
+        checkbox.dispatchEvent(changeEvent);
+      }
+    }
+  });
+}
+
+// Initialize extension filter dropdown
+function initExtensionFilter(data) {
+  const extensions = getUniqueExtensions(data);
+  renderExtensionDropdown(extensions);
+  
+  const filterBtn = document.getElementById('extensionFilterBtn');
+  const dropdown = document.getElementById('extensionDropdown');
+  
+  filterBtn.addEventListener('click', () => {
+    dropdown.classList.toggle('hidden');
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!dropdown.contains(e.target) && e.target !== filterBtn) {
+      dropdown.classList.add('hidden');
+    }
+  });
+}
+
 function scanDirectory() {
   const inputPath = document.getElementById('directoryPathInput').value.trim() || currentRootPath;
   if (!inputPath) {
@@ -824,6 +930,12 @@ function scanDirectory() {
       
       const tree = createTree(processedData);
       sidebarEl.appendChild(tree);
+      
+      // Initialize extension filter
+      initExtensionFilter(data);
+      
+      // Apply selected extensions
+      selectFilesByExtensions();
       
       // Debug: Count total files
       let fileCount = 0;
@@ -885,6 +997,81 @@ function clearAll() {
   showToast('All selections cleared', 'info');
 }
 
+async function refreshSelectedFiles() {
+  const checkboxes = document.querySelectorAll('#sidebar li.file .tree-checkbox:checked');
+  if (checkboxes.length === 0) {
+    showToast("No files selected to refresh", "error");
+    return;
+  }
+
+  document.getElementById('loading-spinner').classList.remove('hidden');
+  let refreshedCount = 0;
+  const processedFiles = new Set();
+
+  for (const checkbox of checkboxes) {
+    const li = checkbox.closest('li');
+    const filePath = li.dataset.path;
+    const fileName = filePath.split(/[\\/]/).pop();
+    const loc = li.dataset.loc || 0;
+
+    if (processedFiles.has(filePath)) continue;
+    processedFiles.add(filePath);
+
+    try {
+      const response = await fetch(`/get-file-content?file=${encodeURIComponent(filePath)}&root=${encodeURIComponent(currentRootPath)}`);
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+      const data = await response.text();
+      const block = document.querySelector(`.file-block[data-path="${CSS.escape(filePath)}"]`);
+      if (block) {
+        // Update existing block
+        block.querySelector('pre code').textContent = escapeHTML(data);
+        const textarea = block.querySelector('.full-edit textarea');
+        if (textarea) textarea.value = data;
+        refreshedCount++;
+      } else {
+        // Load new block if not already displayed
+        const newBlock = document.createElement('div');
+        newBlock.className = 'file-block slide-in';
+        newBlock.dataset.path = filePath;
+        newBlock.innerHTML = `
+          <div class="file-header">
+            <h2>${fileName} (${loc} LOC)</h2>
+            <div class="file-actions">
+              <button onclick="copyContent(this)">Copy</button>
+              <button onclick="closeFile(this)">Close</button>
+            </div>
+          </div>
+          <pre><code>${escapeHTML(data)}</code></pre>
+          <div class="edit-controls">
+            <div class="full-edit hidden">
+              <textarea>${data}</textarea>
+              <button onclick="saveFullEdit('${filePath}', this)">Save</button>
+            </div>
+            <div class="partial-edit hidden">
+              <input type="text" placeholder="Find" class="find-text">
+              <input type="text" placeholder="Replace" class="replace-text">
+              <button onclick="savePartialEdit('${filePath}', this)">Apply</button>
+            </div>
+          </div>`;
+        document.getElementById('content').appendChild(newBlock);
+        newBlock.scrollIntoView({ behavior: 'smooth' });
+        refreshedCount++;
+      }
+    } catch (error) {
+      console.error(`Error refreshing ${fileName}:`, error);
+      showToast(`Failed to refresh ${fileName}`, 'error');
+    }
+  }
+
+  document.getElementById('loading-spinner').classList.add('hidden');
+  if (refreshedCount > 0) {
+    showToast(`Refreshed ${refreshedCount} file(s)`, 'success');
+  } else {
+    showToast('No files were refreshed', 'info');
+  }
+}
+
 function initKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     // Ctrl+F for search
@@ -931,6 +1118,8 @@ function initBeforeUnloadCheck() {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
+  loadCustomColors();
+  loadSelectedExtensions();
   initDarkMode();
   initResizer();
   initKeyboardShortcuts();
@@ -938,6 +1127,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   document.getElementById('clearAllBtn').addEventListener('click', clearAll);
   document.getElementById('copySelectedBtn').addEventListener('click', copySelected);
+  document.getElementById('refreshSelectedBtn').addEventListener('click', refreshSelectedFiles);
   document.getElementById('expandAllBtn').addEventListener('click', expandAll);
   document.getElementById('scanDirectoryBtn').addEventListener('click', scanDirectory);
   document.getElementById('searchInput').addEventListener('input', searchTree);
@@ -950,6 +1140,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       const tree = createTree(data);
       document.getElementById('sidebar').appendChild(tree);
+      initExtensionFilter(data);
+      selectFilesByExtensions();
       showToast('File tree loaded successfully', 'success');
     })
     .catch(error => {

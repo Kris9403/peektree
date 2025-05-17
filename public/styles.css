@@ -26,13 +26,6 @@ body.dark {
 }
 
 .header {
-  /* padding: 0.8rem 1.2rem;
-  background: #2d2d2d;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3); */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -524,7 +517,6 @@ body.dark .theme-toggle .icon::after {
   }
 }
 
-
 .directory-input-container {
   display: flex;
   gap: 0.5rem;
@@ -550,4 +542,56 @@ body.dark .theme-toggle .icon::after {
 
 #scanDirectoryBtn:hover {
   background-color: #3a6ddc;
+}
+
+/* Extension Filter Dropdown */
+.extension-filter-container {
+  position: relative;
+}
+
+#extensionFilterBtn {
+  padding: 6px 12px;
+  border: none;
+  background-color: #5b8def;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#extensionFilterBtn:hover {
+  background-color: #3a6ddc;
+}
+
+.extension-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  padding: 10px;
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+body.dark .extension-dropdown {
+  background: #2f2f3f;
+}
+
+.extension-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.extension-item input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.extension-item label {
+  cursor: pointer;
+  font-size: 0.9rem;
 }

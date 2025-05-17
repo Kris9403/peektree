@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PeekTree</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="lib/highlight.min.js"></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -12,15 +13,23 @@
     <div class="header gradient-glow">
       <h1 class="funky-header">⚡PeekTree🌠</h1>
       <div class="controls">
+        <div class="extension-filter-container">
+          <button id="refreshSelectedBtn">Refresh</button>
+          <button id="extensionFilterBtn" title="Filter by File Extensions">📎 Extensions</button>
+          <div id="extensionDropdown" class="extension-dropdown hidden">
+            <div class="extension-list"></div>
+          </div>
+        </div>
         <button id="clearAllBtn">Clear All</button>
         <button id="copySelectedBtn">Copy Selected</button>
         <button id="darkModeToggle" class="theme-toggle" aria-label="Toggle dark mode">
           <div class="icon sun"></div>
-        </button>        
+        </button>
         <div class="directory-input-container">
           <input type="text" id="directoryPathInput" placeholder="Enter directory path..." />
           <button id="scanDirectoryBtn">Scan</button>
-        </div>          
+        </div>
+        
       </div>
     </div>
     <div class="main">

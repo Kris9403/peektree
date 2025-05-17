@@ -2,14 +2,14 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const port = process.env.PORT || 4000;
+const port = process.env.PORT || 4002;
 
 // Optional default root (used only in fallback GET)
 const DEFAULT_ROOT = path.join('C:', 'Users');
 
 const defaultIgnoreList = [
-    '.next','public', 'next-env.d.ts','favicon.ico', 'node_modules', '.git', 'README.md', 'example.txt', 'package-lock.json',
-    /\.log$/, /\.tmp$/
+    '.next', 'next-env.d.ts', 'favicon.ico', 'node_modules', '.git', 'README.md', 'example.txt', 'package-lock.json',
+    /\.log$/, /\.tmp$/, /\.png$/, /\.svg$/
 ];
 
 // Middleware
@@ -54,11 +54,13 @@ function scanDirectory(dirPath, ignorePatterns = []) {
         if (stats.isDirectory()) {
             result.children.push(scanDirectory(filePath, ignorePatterns));
         } else {
+            const ext = path.extname(file).toLowerCase().slice(1); // Get extension without dot
             result.children.push({
                 name: file,
                 path: filePath,
                 type: 'file',
-                loc: countLines(filePath)
+                loc: countLines(filePath),
+                extension: ext || '' // Include extension
             });
         }
     });
