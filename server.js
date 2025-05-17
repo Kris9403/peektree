@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
@@ -5,7 +7,7 @@ const app = express();
 const port = process.env.PORT || 4002;
 
 // Optional default root (used only in fallback GET)
-const DEFAULT_ROOT = path.join('C:', 'Users');
+const DEFAULT_ROOT = process.env.DEFAULT_ROOT || path.resolve(__dirname);
 
 const defaultIgnoreList = [
     '.next', 'next-env.d.ts', 'favicon.ico', 'node_modules', '.git', 'README.md', 'example.txt', 'package-lock.json',
@@ -49,18 +51,24 @@ function scanDirectory(dirPath, ignorePatterns = []) {
     const files = fs.readdirSync(dirPath);
     files.forEach(file => {
         const filePath = path.join(dirPath, file);
-        if (shouldIgnore(filePath, ignorePatterns)) return;
+        if (shouldIgnore(filePath, ignorePatterns)) {
+            return;
+        }
         const stats = fs.statSync(filePath);
         if (stats.isDirectory()) {
             result.children.push(scanDirectory(filePath, ignorePatterns));
         } else {
-            const ext = path.extname(file).toLowerCase().slice(1); // Get extension without dot
+            // Handle .env explicitly
+            let ext = path.extname(file).toLowerCase().slice(1);
+            if (file === '.env') {
+                ext = 'env'; // Force .env to have 'env' extension
+            }
             result.children.push({
                 name: file,
                 path: filePath,
                 type: 'file',
                 loc: countLines(filePath),
-                extension: ext || '' // Include extension
+                extension: ext || '' // Include extension, empty if no extension
             });
         }
     });
@@ -101,6 +109,9 @@ app.post('/scan', (req, res) => {
 
 // 🔁 Fallback GET Scan (uses DEFAULT_ROOT + defaultIgnoreList)
 app.get('/scan', (req, res) => {
+    if (!fs.existsSync(DEFAULT_ROOT)) {
+        return res.status(400).json({ error: `Default root path does not exist: ${DEFAULT_ROOT}` });
+    }
     const data = scanDirectory(DEFAULT_ROOT, defaultIgnoreList);
     res.json([data]);
 });
@@ -114,10 +125,14 @@ app.get('/get-file-content', (req, res) => {
         return res.status(404).send('File not found or invalid');
     }
 
-    // We'll skip the isWithinRoot check when a custom root is provided
-    // This is safer than before but allows the app to work with custom directories
+    if (!isWithinRoot(filePath, rootDir)) {
+        return res.status(403).send('Access denied: File is outside the root directory');
+    }
+
     fs.readFile(filePath, 'utf-8', (err, data) => {
-        if (err) return res.status(500).send('Error reading file');
+        if (err) {
+            return res.status(500).send('Error reading file');
+        }
         res.send(data);
     });
 });
@@ -132,9 +147,14 @@ app.post('/update-file-content', (req, res) => {
         return res.status(404).send('File not found or invalid');
     }
     
+    if (!isWithinRoot(filePath, rootDir)) {
+        return res.status(403).send('Access denied: File is outside the root directory');
+    }
+    
     fs.writeFile(filePath, content, err => {
-        if (err) return res.status(500).send('Error writing file');
-        console.log(`[UPDATED] ${filePath}`);
+        if (err) {
+            return res.status(500).send('Error writing file');
+        }
         res.send('File updated');
     });
 });
@@ -149,14 +169,21 @@ app.post('/partial-replace', (req, res) => {
         return res.status(404).send('File not found or invalid');
     }
     
+    if (!isWithinRoot(filePath, rootDir)) {
+        return res.status(403).send('Access denied: File is outside the root directory');
+    }
+    
     fs.readFile(filePath, 'utf-8', (err, data) => {
-        if (err) return res.status(500).send('Error reading file');
+        if (err) {
+            return res.status(500).send('Error reading file');
+        }
         try {
             const regex = new RegExp(find, 'g');
             const updated = data.replace(regex, replace);
             fs.writeFile(filePath, updated, err => {
-                if (err) return res.status(500).send('Error writing file');
-                console.log(`[REPLACED] '${find}' ➜ '${replace}' in ${filePath}`);
+                if (err) {
+                    return res.status(500).send('Error writing file');
+                }
                 res.send('Replace successful');
             });
         } catch (err) {

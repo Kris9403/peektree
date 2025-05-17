@@ -29,13 +29,26 @@
           <input type="text" id="directoryPathInput" placeholder="Enter directory path..." />
           <button id="scanDirectoryBtn">Scan</button>
         </div>
-        
       </div>
+      <div id="breadcrumbTrail" class="breadcrumb-trail"></div>
     </div>
     <div class="main">
       <div class="sidebar" id="sidebar">
         <div class="sidebar-controls">
           <input type="text" placeholder="Search files..." id="searchInput">
+          <select id="sortSelect">
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+            <option value="size-asc">Size (Smallest)</option>
+            <option value="size-desc">Size (Largest)</option>
+          </select>
+          <select id="filterSelect">
+            <option value="all">All Files</option>
+            <option value="js">JavaScript</option>
+            <option value="css">CSS</option>
+            <option value="html">HTML</option>
+            <option value="env">ENV</option>
+          </select>
           <button id="expandAllBtn">Expand All</button>
         </div>
       </div>

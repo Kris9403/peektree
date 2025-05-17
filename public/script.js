@@ -2,38 +2,14 @@ let selectedFiles = [];
 let currentRootPath = ''; // Track the current root path
 let currentSortMethod = 'name-asc'; // Default sorting method
 let currentFileFilter = 'all'; // Default file filter
-let customColors = {
-  background: '#262626',
-  text: '#f5f5f5',
-  headerBg: '#1a1a1a',
-  sidebarBg: '#333333',
-  accentColor: '#00b3b3'
-};
 let selectedExtensions = []; // Track selected extensions
 
-// Load custom colors and selected extensions from localStorage
-function loadCustomColors() {
-  const savedColors = localStorage.getItem('customColors');
-  if (savedColors) {
-    customColors = JSON.parse(savedColors);
-    applyCustomColors();
-  }
-}
-
+// Load selected extensions from localStorage
 function loadSelectedExtensions() {
   const savedExtensions = localStorage.getItem('selectedExtensions');
   if (savedExtensions) {
     selectedExtensions = JSON.parse(savedExtensions);
   }
-}
-
-// Apply custom colors to CSS variables
-function applyCustomColors() {
-  document.documentElement.style.setProperty('--dark-bg', customColors.background);
-  document.documentElement.style.setProperty('--dark-text', customColors.text);
-  document.documentElement.style.setProperty('--dark-header', customColors.headerBg);
-  document.documentElement.style.setProperty('--dark-sidebar', customColors.sidebarBg);
-  document.documentElement.style.setProperty('--accent-color', customColors.accentColor);
 }
 
 // Show Edit Mode selection on double-click
@@ -110,7 +86,6 @@ async function copySelected() {
         if (content.trim()) {
           combinedText += `\n\n/* ${fileName} */\n${content}`;
           copiedCount++;
-          console.log(`[DEBUG] Copied: ${filePath}`); // Temporary debug
         }
       }
     } else {
@@ -122,12 +97,9 @@ async function copySelected() {
       if (content.trim()) {
         combinedText += `\n\n/* ${fileName} */\n${content}`;
         copiedCount++;
-        console.log(`[DEBUG] Copied: ${filePath}`); // Temporary debug
       }
     }
   }
-  
-  console.log(`[DEBUG] Total files copied: ${copiedCount}`); // Temporary debug
   
   if (!combinedText.trim()) {
     showToast("No file content found", "error");
@@ -170,9 +142,13 @@ async function getFileContent(filePath, fileName) {
 }
 
 function escapeHTML(str) {
-  return str.replace(/[&<>"']/g, m =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[m])
-  );
+  return str.replace(/[&<>"']/g, m => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&apos;'
+  })[m]);
 }
 
 // Initialize dark mode
@@ -186,91 +162,6 @@ function initDarkMode() {
     document.body.classList.toggle('dark');
     const isDark = document.body.classList.contains('dark');
     localStorage.setItem('darkMode', isDark);
-    
-    if (isDark) {
-      showThemeCustomizer();
-    }
-  });
-}
-
-// Show theme customization panel
-function showThemeCustomizer() {
-  const existingCustomizer = document.getElementById('themeCustomizer');
-  if (existingCustomizer) {
-    existingCustomizer.classList.toggle('hidden');
-    return;
-  }
-  
-  const customizer = document.createElement('div');
-  customizer.id = 'themeCustomizer';
-  customizer.className = 'theme-customizer';
-  customizer.innerHTML = `
-    <h3>Customize Dark Theme</h3>
-    <div class="color-option">
-      <label for="bgColor">Background Color:</label>
-      <input type="color" id="bgColor" value="${customColors.background}">
-    </div>
-    <div class="color-option">
-      <label for="textColor">Text Color:</label>
-      <input type="color" id="textColor" value="${customColors.text}">
-    </div>
-    <div class="color-option">
-      <label for="headerColor">Header Color:</label>
-      <input type="color" id="headerColor" value="${customColors.headerBg}">
-    </div>
-    <div class="color-option">
-      <label for="sidebarColor">Sidebar Color:</label>
-      <input type="color" id="sidebarColor" value="${customColors.sidebarBg}">
-    </div>
-    <div class="color-option">
-      <label for="accentColor">Accent Color:</label>
-      <input type="color" id="accentColor" value="${customColors.accentColor}">
-    </div>
-    <div class="theme-controls">
-      <button id="applyTheme">Apply</button>
-      <button id="resetTheme">Reset</button>
-      <button id="closeTheme">Close</button>
-    </div>
-  `;
-  
-  document.body.appendChild(customizer);
-  
-  document.getElementById('applyTheme').addEventListener('click', () => {
-    customColors = {
-      background: document.getElementById('bgColor').value,
-      text: document.getElementById('textColor').value,
-      headerBg: document.getElementById('headerColor').value,
-      sidebarBg: document.getElementById('sidebarColor').value,
-      accentColor: document.getElementById('accentColor').value
-    };
-    
-    localStorage.setItem('customColors', JSON.stringify(customColors));
-    applyCustomColors();
-    showToast('Theme customization applied!', 'success');
-  });
-  
-  document.getElementById('resetTheme').addEventListener('click', () => {
-    customColors = {
-      background: '#262626',
-      text: '#f5f5f5',
-      headerBg: '#1a1a1a',
-      sidebarBg: '#333333',
-      accentColor: '#00b3b3'
-    };
-    
-    document.getElementById('bgColor').value = customColors.background;
-    document.getElementById('textColor').value = customColors.text;
-    document.getElementById('headerColor').value = customColors.headerBg;
-    document.getElementById('sidebarColor').value = customColors.sidebarBg;
-    document.getElementById('accentColor').value = customColors.accentColor;
-    
-    localStorage.setItem('customColors', JSON.stringify(customColors));
-    applyCustomColors();
-    showToast('Theme reset to defaults', 'info');
-  });
-  
-  document.getElementById('closeTheme').addEventListener('click', () => {
-    customizer.classList.add('hidden');
   });
 }
 
@@ -302,7 +193,7 @@ function generateBreadcrumbs(currentPath) {
   segments.forEach((segment, index) => {
     if (!segment) return;
     
-    cumulativePath += (cumulativePath ? '/' : '') + segment;
+    cumulativePath += (cumulativePath ? '\\' : '') + segment;
     
     const breadcrumbItem = document.createElement('span');
     breadcrumbItem.className = 'breadcrumb-item';
@@ -582,7 +473,7 @@ function loadFile(path, name, loc) {
       
       block.innerHTML = `
         <div class="file-header">
-          <h2>${name} (${loc} LOC)</h2>
+          <h2>${escapeHTML(name)} (${loc} LOC)</h2>
           <div class="file-actions">
             <button onclick="copyContent(this)">Copy</button>
             <button onclick="closeFile(this)">Close</button>
@@ -591,13 +482,13 @@ function loadFile(path, name, loc) {
         <pre><code>${escapeHTML(data)}</code></pre>
         <div class="edit-controls">
           <div class="full-edit hidden">
-            <textarea>${data}</textarea>
-            <button onclick="saveFullEdit('${path}', this)">Save</button>
+            <textarea>${escapeHTML(data)}</textarea>
+            <button onclick="saveFullEdit('${CSS.escape(path)}', this)">Save</button>
           </div>
           <div class="partial-edit hidden">
             <input type="text" placeholder="Find" class="find-text">
             <input type="text" placeholder="Replace" class="replace-text">
-            <button onclick="savePartialEdit('${path}', this)">Apply</button>
+            <button onclick="savePartialEdit('${CSS.escape(path)}', this)">Apply</button>
           </div>
         </div>`;
         
@@ -673,18 +564,18 @@ function saveFullEdit(path, btn) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: text })
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Server returned error');
-    return response.text();
-  })
-  .then(() => {
-    showToast('File saved successfully!', 'success');
-    const block = btn.closest('.file-block');
-    block.querySelector('pre code').textContent = text;
-  })
-  .catch(() => {
-    showToast('Failed to save file!', 'error');
-  });
+    .then(response => {
+      if (!response.ok) throw new Error('Server returned error');
+      return response.text();
+    })
+    .then(() => {
+      showToast('File saved successfully!', 'success');
+      const block = btn.closest('.file-block');
+      block.querySelector('pre code').textContent = text;
+    })
+    .catch(() => {
+      showToast('Failed to save file!', 'error');
+    });
 }
 
 function savePartialEdit(path, btn) {
@@ -702,23 +593,23 @@ function savePartialEdit(path, btn) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ find, replace })
   })
-  .then(response => {
-    if (!response.ok) throw new Error('Failed to apply replacement');
-    return response.text();
-  })
-  .then(() => {
-    showToast('Find & Replace applied!', 'success');
-    return fetch(`/get-file-content?file=${encodeURIComponent(path)}&root=${encodeURIComponent(currentRootPath)}`);
-  })
-  .then(res => res.text())
-  .then(updated => {
-    const block = btn.closest('.file-block');
-    block.querySelector('pre code').textContent = updated;
-    block.querySelector('.full-edit textarea').value = updated;
-  })
-  .catch(() => {
-    showToast('Find & Replace failed', 'error');
-  });
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to apply replacement');
+      return response.text();
+    })
+    .then(() => {
+      showToast('Find & Replace applied!', 'success');
+      return fetch(`/get-file-content?file=${encodeURIComponent(path)}&root=${encodeURIComponent(currentRootPath)}`);
+    })
+    .then(res => res.text())
+    .then(updated => {
+      const block = btn.closest('.file-block');
+      block.querySelector('pre code').textContent = updated;
+      block.querySelector('.full-edit textarea').value = updated;
+    })
+    .catch(() => {
+      showToast('Find & Replace failed', 'error');
+    });
 }
 
 function expandAll() {
@@ -894,65 +785,47 @@ function initExtensionFilter(data) {
 }
 
 function scanDirectory() {
-  const inputPath = document.getElementById('directoryPathInput').value.trim() || currentRootPath;
+  let inputPath = document.getElementById('directoryPathInput').value.trim() || currentRootPath;
   if (!inputPath) {
     showToast("Please enter a directory path", "error");
     return;
   }
-  
+
+  // Normalize path for Windows (replace forward slashes with backslashes)
+  inputPath = inputPath.replace(/\//g, '\\');
   currentRootPath = inputPath;
-  
+
   fetch('/scan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ root: inputPath })
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.error) {
-      showToast(`Error: ${data.error}`, "error");
-    } else {
-      showToast("Directory scanned successfully!", "success");
-      
-      window.currentRootPath = currentRootPath;
-      
-      generateBreadcrumbs(currentRootPath);
-      
-      let processedData = [...data];
-      processedData = sortFileTree(processedData, currentSortMethod);
-      processedData = filterFileTree(processedData, currentFileFilter);
-      
-      const sidebarEl = document.getElementById('sidebar');
-      const existingTree = sidebarEl.querySelector('ul');
-      if (existingTree) {
-        existingTree.remove();
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        showToast(`Error: ${data.error}`, "error");
+      } else {
+        showToast("Directory scanned successfully!", "success");
+        window.currentRootPath = currentRootPath;
+        generateBreadcrumbs(currentRootPath);
+        let processedData = [...data];
+        processedData = sortFileTree(processedData, currentSortMethod);
+        processedData = filterFileTree(processedData, currentFileFilter);
+        const sidebarEl = document.getElementById('sidebar');
+        const existingTree = sidebarEl.querySelector('ul');
+        if (existingTree) {
+          existingTree.remove();
+        }
+        const tree = createTree(processedData);
+        sidebarEl.appendChild(tree);
+        initExtensionFilter(data);
+        selectFilesByExtensions();
       }
-      
-      const tree = createTree(processedData);
-      sidebarEl.appendChild(tree);
-      
-      // Initialize extension filter
-      initExtensionFilter(data);
-      
-      // Apply selected extensions
-      selectFilesByExtensions();
-      
-      // Debug: Count total files
-      let fileCount = 0;
-      function countFiles(items) {
-        items.forEach(item => {
-          if (item.type === 'file') fileCount++;
-          if (item.children) countFiles(item.children);
-        });
-      }
-      countFiles(processedData);
-      console.log(`[DEBUG] Total files in tree: ${fileCount}`);
-    }
-  })
-  .catch(err => {
-    console.error(err);
-    showToast("Failed to scan directory.", "error");
-  });
+    })
+    .catch(err => {
+      console.error(err);
+      showToast("Failed to scan directory.", "error");
+    });
 }
 
 function refreshFileTree() {
@@ -1019,7 +892,9 @@ async function refreshSelectedFiles() {
 
     try {
       const response = await fetch(`/get-file-content?file=${encodeURIComponent(filePath)}&root=${encodeURIComponent(currentRootPath)}`);
-      if (!response.ok) throw new Error(`Server returned ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status} for ${fileName}`);
+      }
 
       const data = await response.text();
       const block = document.querySelector(`.file-block[data-path="${CSS.escape(filePath)}"]`);
@@ -1030,13 +905,13 @@ async function refreshSelectedFiles() {
         if (textarea) textarea.value = data;
         refreshedCount++;
       } else {
-        // Load new block if not already displayed
+        // Load new block
         const newBlock = document.createElement('div');
         newBlock.className = 'file-block slide-in';
         newBlock.dataset.path = filePath;
         newBlock.innerHTML = `
           <div class="file-header">
-            <h2>${fileName} (${loc} LOC)</h2>
+            <h2>${escapeHTML(fileName)} (${loc} LOC)</h2>
             <div class="file-actions">
               <button onclick="copyContent(this)">Copy</button>
               <button onclick="closeFile(this)">Close</button>
@@ -1045,13 +920,13 @@ async function refreshSelectedFiles() {
           <pre><code>${escapeHTML(data)}</code></pre>
           <div class="edit-controls">
             <div class="full-edit hidden">
-              <textarea>${data}</textarea>
-              <button onclick="saveFullEdit('${filePath}', this)">Save</button>
+              <textarea>${escapeHTML(data)}</textarea>
+              <button onclick="saveFullEdit('${CSS.escape(filePath)}', this)">Save</button>
             </div>
             <div class="partial-edit hidden">
               <input type="text" placeholder="Find" class="find-text">
               <input type="text" placeholder="Replace" class="replace-text">
-              <button onclick="savePartialEdit('${filePath}', this)">Apply</button>
+              <button onclick="savePartialEdit('${CSS.escape(filePath)}', this)">Apply</button>
             </div>
           </div>`;
         document.getElementById('content').appendChild(newBlock);
@@ -1118,7 +993,6 @@ function initBeforeUnloadCheck() {
 
 // Initialize event listeners
 document.addEventListener('DOMContentLoaded', () => {
-  loadCustomColors();
   loadSelectedExtensions();
   initDarkMode();
   initResizer();
@@ -1131,6 +1005,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('expandAllBtn').addEventListener('click', expandAll);
   document.getElementById('scanDirectoryBtn').addEventListener('click', scanDirectory);
   document.getElementById('searchInput').addEventListener('input', searchTree);
+  document.getElementById('sortSelect').addEventListener('change', handleSortChange);
+  document.getElementById('filterSelect').addEventListener('change', handleFilterChange);
   
   fetch('/scan')
     .then(res => {

@@ -136,6 +136,20 @@ body.dark .sidebar {
   align-items: center;
 }
 
+.sidebar-controls select {
+  padding: 0.3rem;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  background: #fff;
+  cursor: pointer;
+}
+
+body.dark .sidebar-controls select {
+  background: #2f2f3f;
+  color: #ddd;
+  border-color: #555;
+}
+
 .sidebar input {
   flex: 1;
   padding: 0.3rem 0.5rem;
@@ -181,7 +195,7 @@ li:hover {
 }
 
 .nested.active {
-  display:block;
+  display: block;
 }
 
 /* Resizer */
@@ -594,4 +608,25 @@ body.dark .extension-dropdown {
 .extension-item label {
   cursor: pointer;
   font-size: 0.9rem;
+}
+
+/* Breadcrumbs */
+.breadcrumb-trail {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: #ddd;
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.breadcrumb-item.clickable:hover {
+  color: #00ffe7;
+}
+
+.breadcrumb-item.current {
+  font-weight: bold;
+  color: #00ffe7;
 }
