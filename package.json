@@ -1,5 +1,5 @@
 {
-  "name": "PeekTree",
+  "name": "peektree",
   "version": "1.0.1",
   "description": "PeekTree: A productivity tool for copying and pasting file contents",
   "main": "server.js",
