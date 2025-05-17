@@ -38,7 +38,7 @@ PeekTree is a web-based file tree explorer that allows users to browse directori
    PORT=4002
    DEFAULT_ROOT=/path/to/your/default/directory
    ```
-   Replace `/path/to/your/default/directory` with the absolute path to the default directory you want to scan (e.g., `/home/user/projects` or `C:\Users\Girija\Documents`).
+   Replace `/path/to/your/default/directory` with the absolute path to the default directory you want to scan (e.g., `/home/user/projects` or `C:\Users\Krishna\Documents`).
 
 4. **Start the Server**:
    ```bash
