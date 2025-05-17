@@ -23,7 +23,7 @@ PeekTree is a web-based file tree explorer that allows users to browse directori
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/your-username/peektree.git
+   git clone https://github.com/Kris9403/peektree.git
    cd peektree
    ```
 
